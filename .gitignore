@@ -1,0 +1,4 @@
+*.log
+platforms/vagrant/.vagrant
+platforms/vagrant/*.vdi
+**/*.retry
