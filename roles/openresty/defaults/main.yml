@@ -11,12 +11,12 @@ upstreams:
 #      - "service1"
 #    limit: "10r/s"
 
-openresty_conf_port: 4443
+openresty_conf_port: 443
 
 virtual_hosts:
   - name: localhost
     ssl: yes
-    proxy_protocol: no
+    proxy_protocol: yes
     domains:
       - "localhost"
     locations:
