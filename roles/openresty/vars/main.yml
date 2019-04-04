@@ -1,0 +1,20 @@
+---
+
+openresty:
+  version: "{{openresty_version | default('alpine-fat')}}"
+  gid: "{{openresty_version | default('2500')}}"
+  uid: "{{openresty_uid | default('5400')}}"
+  image: "{{openresty_image | default('openresty/openresty')}}"
+  home: "{{openresty_home | default('/home/openresty')}}"
+  logs: "{{openresty_logs | default((openresty_home | default('/home/openresty'))+'/logs')}}"
+  conf:
+    dir: "{{openresty_conf | default((openresty_home | default('/home/openresty'))+'/conf.d')}}"
+    ssl:
+      dir: "{{openresty_conf_ssl | default((openresty_conf | default('/home/openresty/conf.d'))+'/ssl')}}"
+    auth:
+      dir: "{{openresty_conf_auth | default((openresty_conf | default('/home/openresty/conf.d'))+'/auth')}}"
+    address: "{{openresty_conf_address | default('0.0.0.0')}}"
+    port: "{{openresty_conf_port | default('8080')}}"
+
+  container:
+    id: "{{openresty_container_id | default('openresty')}}"

@@ -1,0 +1,33 @@
+---
+
+- hosts: server
+  become: yes
+  vars:
+    pip_install_packages:
+      - name: docker
+      - name: passlib
+  roles:
+    - geerlingguy.repo-epel
+    - geerlingguy.pip
+    - geerlingguy.docker
+  tasks:
+
+    - name: Ensure openssl configuration copied
+      shell: cp /etc/pki/tls/openssl.cnf /tmp/openssl.cnf
+      become: yes
+
+    - name: Ensure openssl configuration updated
+      shell: sed -i "/\[ v3_ca \]/a subjectAltName = DNS:localhost" /tmp/openssl.cnf
+
+    - name: Ensure self-signed SSL certificate generated
+      shell: >
+        openssl req \
+         -config /tmp/openssl.cnf \
+         -newkey rsa:2048 \
+         -nodes \
+         -x509 \
+         -subj "/C=/ST=/L=/O=/CN=localhost" \
+         -days 365 \
+         -keyout /etc/ssl/localhost.key -out /etc/ssl/localhost.crt
+      become: yes
+

@@ -1,0 +1,93 @@
+---
+
+
+- name: Ensure group envoy created
+  group:
+    name: envoy
+    gid: 2400
+    state: present
+  become: yes
+
+- name: Ensure envoy home directory is present
+  file:
+    path: "{{envoy.home}}"
+    state: directory
+  become: yes
+
+- name: Ensure user envoy created
+  user:
+    name: envoy
+    group: envoy
+    home: "{{envoy.home}}"
+    shell: /bin/bash
+    uid: 5300
+    state: present
+  become: yes
+
+- name: Ensure envoy directories are presents with proper ownership
+  file:
+    path: "{{item}}"
+    owner: envoy
+    group: envoy
+    state: directory
+  become: yes
+  with_items:
+    - "{{envoy.home}}"
+    - "{{envoy.etc}}"
+    - "{{envoy.logs}}"
+    - "{{envoy.ssl}}"
+
+- name: Ensure certs copied
+  shell: cp /etc/ssl/localhost.* {{envoy.ssl}}
+  become: yes
+
+- name: Ensure envoy configuration file copied
+  template:
+    src: envoy.yaml.j2
+    mode: u+rw
+    owner: envoy
+    group: envoy
+    dest: "{{ envoy.etc }}/envoy.yaml"
+  become: yes
+
+- name: Get infos on container
+  docker_container:
+    name: "{{ envoy.container.id }}"
+    state: started
+  ignore_errors: yes
+  register: result
+  become: yes
+
+- set_fact:
+    container_exist: "{{ ('yes' if result.ansible_facts is defined else 'no') | bool }}"
+
+- name: Does container exist?
+  debug:
+    var: container_exist
+
+- name: Print the status of the container
+  debug:
+    msg: "The container status is {{ result.ansible_facts.docker_container['State']['Status'] }}"
+  when: container_exist
+
+- name: Ensure the older envoy service is removed
+  docker_container:
+    name: "{{ envoy.container.id }}"
+    state: absent
+  register: remove_envoy
+  when: container_exist
+  become: yes
+
+- name: Ensure the envoy service is running
+  docker_container:
+    name: "{{ envoy.container.id }}"
+    image: "{{ envoy.image }}:{{ envoy.version }}"
+    state: started
+    ports:
+      - "{{ envoy.config.static.listener.port }}:{{ envoy.config.static.listener.port }}"
+      - "{{ envoy.config.admin.port }}:{{ envoy.config.admin.port }}"
+    volumes:
+      - "{{envoy.ssl}}/:/etc/envoy/certs/:ro"
+      - "{{envoy.etc}}/envoy.yaml:/etc/envoy/envoy.yaml:ro"
+      - "{{envoy.logs}}/:/var/log/envoy/:rw"
+  become: yes

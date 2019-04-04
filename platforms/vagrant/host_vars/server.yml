@@ -1,0 +1,4 @@
+ansible_user: vagrant
+ansible_ssh_host: 172.16.0.11
+ansible_ssh_private_key_file: "{{inventory_dir}}/.vagrant/machines/server/virtualbox/private_key"
+force_docker_mount_point: /dev/vg_docker/lv_docker

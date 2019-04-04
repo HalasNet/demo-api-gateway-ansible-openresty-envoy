@@ -2,3 +2,4 @@
 platforms/vagrant/.vagrant
 platforms/vagrant/*.vdi
 **/*.retry
+vault.txt

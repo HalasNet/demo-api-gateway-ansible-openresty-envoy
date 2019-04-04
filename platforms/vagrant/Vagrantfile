@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+#
+# Plugin vagrant-persistent-storage is required 'vagrant plugin install vagrant-persistent-storage'
+Vagrant.configure(2) do |config|
+
+  config.vm.box_check_update = true
+  config.vm.box = "centos/7"
+  config.vm.synced_folder "./", "/vagrant", disabled:true
+  config.vm.synced_folder "./", "/home/vagrant/sync", disabled:true
+
+  config.vm.network "forwarded_port", guest: 9901, host: 9901, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 10000, host: 10000, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 8080, host: 8080, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 4443, host: 4443, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 80, host: 80, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 443, host: 443, protocol: "tcp"
+
+  config.vm.define "server" do |cluster|
+    cluster.vm.hostname = "cluster-server.vm"
+    cluster.vm.network "private_network", ip:"172.16.0.11"
+    cluster.vm.provider "virtualbox" do |vb|
+      vb.name = "cluster-server"
+      vb.cpus = 2
+      vb.memory = 2*1024
+    end
+    cluster.persistent_storage.enabled = true
+    cluster.persistent_storage.diskdevice = '/dev/sdb'
+    cluster.persistent_storage.location = "./docker-server.vdi"
+    cluster.persistent_storage.size = 20000
+    cluster.persistent_storage.partition = false
+  end
+
+  config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "~/.ssh/me.pub"
+  config.vm.provision :shell, :inline =>"
+    echo 'Copying public SSH Keys to the VM'
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    cat ~/.ssh/me.pub >> ~/.ssh/authorized_keys
+    chmod -R 600 ~/.ssh/authorized_keys
+    echo 'Host 172.16.*.*' >> ~/.ssh/config
+    echo 'StrictHostKeyChecking no' >> ~/.ssh/config
+    echo 'UserKnownHostsFile /dev/null' >> ~/.ssh/config
+    chmod -R 600 ~/.ssh/config
+    (
+    echo d # Delete a partition
+    echo n # Add a new partition
+    echo p # Primary partition
+    echo 1 # Partition number
+    echo   # First sector (Accept default: 1)
+    echo   # Last sector (Accept default: varies)
+    echo t # partition type
+    echo 8e # Linux LVM
+    echo w # Write changes
+    ) | sudo fdisk /dev/sdb
+    ", privileged: false
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "provision/provision.yml"
+  end
+end

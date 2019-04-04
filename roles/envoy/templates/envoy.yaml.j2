@@ -1,0 +1,65 @@
+static_resources:
+  listeners:
+  - address:
+      socket_address: { address: {{ envoy.config.static.listener.address }}, port_value: {{ envoy.config.static.listener.port }} }
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          codec_type: auto
+          stat_prefix: ingress_http
+          access_log:
+            - name: envoy.file_access_log
+              config:
+                path: "/var/log/envoy/access.log"
+          route_config:
+            name: local_route
+            virtual_hosts:
+{% for vh in virtual_hosts|list %}
+            - name: {{ vh.name }}
+              domains:
+{% for domain in vh.domains|list %}
+                - "{{ domain }}"
+{% endfor %}
+              routes:
+{% for rule in vh.rules|list %}
+                - match:
+{% if rule.prefix is defined and rule.prefix|length %}
+                    prefix: "{{ rule.prefix }}"
+                  route:
+{% if rule.prefix_rewrite is defined and rule.prefix_rewrite|length %}
+                    prefix_rewrite: "{{ rule.prefix_rewrite }}"
+{% endif %}
+{% if rule.host_rewrite is defined and rule.host_rewrite|length %}
+                    host_rewrite: {{ rule.host_rewrite }}
+{% endif %}
+                    cluster: {{ rule.cluster }}_cluster
+{% endif %}
+{% endfor %}
+{% endfor %}
+          http_filters:
+          - name: envoy.router
+            config: {}
+{% if ssl is defined and ssl | bool %}
+      tls_context:
+        common_tls_context:
+          tls_certificates:
+          - certificate_chain:
+               filename: "/etc/envoy/certs/{{ envoy.config.certs.prefix }}.crt"
+            private_key:
+               filename: "/etc/envoy/certs/{{ envoy.config.certs.prefix }}.key"
+{% endif %}
+  clusters:
+{% for cluster in clusters|list %}
+  - name: {{ cluster.name }}_cluster
+    connect_timeout: {{ cluster.timeout }}
+    type: {{ cluster.type }}
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    hosts: [{ socket_address: { address: {{ cluster.address }}, port_value: {{ cluster.port}} }}]
+    tls_context: { {% if cluster.tls is defined and cluster.tls.sni is defined and cluster.tls.sni|length %}sni: {{ cluster.tls.sni }} {% endif %}}
+{% endfor %}
+admin:
+  access_log_path: "/var/log/envoy/admin_access.log"
+  address:
+    socket_address: { address: {{ envoy.config.admin.address }}, port_value: {{ envoy.config.admin.port }} }

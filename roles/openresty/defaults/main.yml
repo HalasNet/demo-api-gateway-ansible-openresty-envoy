@@ -1,0 +1,50 @@
+upstreams:
+  - name: site_ebiz
+    servers:
+      - "5.39.25.113:443"
+  - name: exchangerates_api
+    servers:
+      - "api.exchangeratesapi.io:443"
+    limit: "1r/s"
+#  - name: service_1
+#    servers:
+#      - "service1"
+#    limit: "10r/s"
+
+openresty_conf_port: 4443
+
+virtual_hosts:
+  - name: localhost
+    ssl: yes
+    proxy_protocol: no
+    domains:
+      - "localhost"
+    locations:
+      - { name: "/ebiznext/", rewrite: "/", proxy_pass: "https://site_ebiz" }
+      - { name: "/er/", rewrite: "/", proxy_pass: "https://exchangerates_api", auth: yes}
+      # - { name: "/app/", regex: "/app/(.*) /api/app/v2/$1", proxy_pass: "https://app_api"}
+
+# Edit and uncomment to test White lists
+#   whitelist:
+#      - 193.248.38.15
+#      - 80.12.42.127
+
+users:
+  - user: "janedoe"
+    password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      65303566616336623866343634316432333139636335656439656562303736333438323531313534
+      3030353832663738616436366466316436316236353434640a623134626535383437356462373566
+      63336664666463323466396432383864353165333033326334626462366138636631653664623761
+      3534333533356339390a613664626131303734616561613339323931316364653461316663633466
+      3232
+
+  - user: "johndoe"
+    password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      65303566616336623866343634316432333139636335656439656562303736333438323531313534
+      3030353832663738616436366466316436316236353434640a623134626535383437356462373566
+      63336664666463323466396432383864353165333033326334626462366138636631653664623761
+      3534333533356339390a613664626131303734616561613339323931316364653461316663633466
+      3232
+

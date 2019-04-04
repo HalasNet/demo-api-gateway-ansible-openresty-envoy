@@ -1,0 +1,25 @@
+clusters:
+  - name: "exchangerates_api"
+    type: "LOGICAL_DNS"
+    timeout: "0.5s"
+    address: "api.exchangeratesapi.io"
+    port: "443"
+    tls:
+      sni: "api.exchangeratesapi.io"
+
+  - name: "site_ebiz"
+    type: "STATIC"
+    timeout: "0.5s"
+    address: "5.39.25.113"
+    port: "443"
+
+virtual_hosts:
+ - name: local_service
+   domains:
+     - "localhost:10000"
+   rules:
+     - { prefix: "/ebiznext/", prefix_rewrite: "/", host_rewrite: "www.ebiznext.com", cluster: "site_ebiz"}
+     - { prefix: "/er/", prefix_rewrite: "/", host_rewrite: "api.exchangeratesapi.io", cluster: "exchangerates_api"}
+
+ssl: yes
+envoy_config_certs_prefix: "localhost"

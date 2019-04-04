@@ -1,0 +1,23 @@
+---
+
+envoy:
+  version: "{{envoy_version | default('latest')}}"
+  gid: "{{envoy_version | default('2400')}}"
+  uid: "{{envoy_uid | default('5300')}}"
+  image: "{{envoy_image | default('envoyproxy/envoy')}}"
+  home: "{{envoy_home | default('/home/envoy')}}"
+  logs: "{{envoy_logs | default((envoy_home | default('/home/envoy'))+'/logs')}}"
+  etc: "{{envoy_etc | default((envoy_home | default('/home/envoy'))+'/etc')}}"
+  ssl: "{{envoy_ssl | default((envoy_etc | default('/home/envoy/etc'))+'/ssl')}}"
+  config:
+    static:
+      listener:
+        address: "{{envoy_listener_address | default('0.0.0.0')}}"
+        port: "{{envoy_listener_port | default('10000')}}"
+    admin:
+      address: "{{envoy_admin_address | default('0.0.0.0')}}"
+      port: "{{envoy_admin_port | default('9901')}}"
+    certs:
+      prefix: "{{envoy_config_certs_prefix | default('www.example.com')}}"
+  container:
+    id: "{{envoy_container_id | default('envoy')}}"

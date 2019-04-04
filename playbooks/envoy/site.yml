@@ -1,0 +1,7 @@
+---
+
+- name: Deploy envoy proxy
+  hosts: server
+  any_errors_fatal: true
+  roles:
+    - {role: envoy}
