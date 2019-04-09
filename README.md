@@ -1,6 +1,6 @@
 # Solution API Gateway OpenSource avec Git, Ansible, Docker et Openresty / Envoy
 
-pour plus de détails : [http://blog.ebiznext.com/2019/04/...]
+pour plus de détails : [http://blog.ebiznext.com/2019/04/05/apigateway-openresty-envoy-ansible/]()
 
 
 ## Pré-requis
